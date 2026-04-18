@@ -5,6 +5,8 @@
 WallpaperEngine Extractor 是一款基于 Windows 11 UI 风格（WinUI 3/WPF）的 Wallpaper Engine PKG 文件提取工具。本工具提供直观的图形界面，让用户能够轻松地从 Wallpaper Engine 的 PKG 包中提取壁纸资源文件。
 
 ## 功能特性
+![Uploading image.png…]()
+
 
 ### 核心功能
 
