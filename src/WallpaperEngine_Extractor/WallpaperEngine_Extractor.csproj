@@ -1,0 +1,27 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <UseWPF>true</UseWPF>
+    <AssemblyName>WallpaperEngine_Extractor</AssemblyName>
+    <RootNamespace>WallpaperEngine_Extractor</RootNamespace>
+    <Version>1.0.0</Version>
+    <Authors>dujunxi1993</Authors>
+    <Product>Wallpaper Engine Extractor</Product>
+    <Description>Wallpaper Engine PKG Extractor with Windows 11 UI</Description>
+    <ApplicationIcon>app.ico</ApplicationIcon>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="CommunityToolkit.Mvvm" Version="8.2.2" />
+    <PackageReference Include="WPF-UI" Version="4.2.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\libs\repkg\RePKG.Core\RePKG.Core.csproj" />
+    <ProjectReference Include="..\..\libs\repkg\RePKG.Application\RePKG.Application.csproj" />
+  </ItemGroup>
+
+</Project>

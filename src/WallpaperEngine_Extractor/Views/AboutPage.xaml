@@ -1,0 +1,75 @@
+<Page x:Class="WallpaperEngine_Extractor.Views.AboutPage"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      Background="{DynamicResource BackgroundBrush}"
+      Title="关于">
+
+    <Grid Margin="24">
+        <StackPanel VerticalAlignment="Center"
+                    HorizontalAlignment="Center"
+                    MaxWidth="400">
+
+            <!-- App Icon -->
+            <TextBlock Text="&#xE8B7;"
+                       FontFamily="Segoe MDL2 Assets"
+                       FontSize="72"
+                       HorizontalAlignment="Center"
+                       Margin="0,0,0,24"
+                       Foreground="{DynamicResource AccentBrush}"/>
+
+            <!-- App Name -->
+            <TextBlock Text="WallpaperEngine Extractor"
+                       FontSize="32"
+                       FontWeight="Bold"
+                       HorizontalAlignment="Center"
+                       Margin="0,0,0,8"
+                       Foreground="{DynamicResource TextPrimaryBrush}"/>
+
+            <!-- Version -->
+            <TextBlock Text="Version 1.0.0"
+                       FontSize="16"
+                       Opacity="0.7"
+                       HorizontalAlignment="Center"
+                       Margin="0,0,0,24"
+                       Foreground="{DynamicResource TextSecondaryBrush}"/>
+
+            <!-- Description -->
+            <Border Background="{DynamicResource SurfaceBrush}"
+                    CornerRadius="8"
+                    Padding="16"
+                    Margin="0,0,0,24">
+                <TextBlock Text="基于 RePKG 的 Wallpaper Engine PKG 提取工具，支持 TEX 转 PNG 图片功能。"
+                           TextWrapping="Wrap"
+                           TextAlignment="Center"
+                           FontSize="14"
+                           Foreground="{DynamicResource TextPrimaryBrush}"/>
+            </Border>
+
+            <!-- Author -->
+            <TextBlock HorizontalAlignment="Center"
+                       Margin="0,0,0,8"
+                       Foreground="{DynamicResource TextPrimaryBrush}">
+                <Run Text="作者: "/>
+                <Run Text="dujunxi1993"/>
+            </TextBlock>
+
+            <!-- GitHub Link -->
+            <TextBlock HorizontalAlignment="Center"
+                       Margin="0,0,0,24"
+                       Foreground="{DynamicResource TextPrimaryBrush}">
+                <Run Text="源代码: "/>
+                <Hyperlink NavigateUri="https://github.com/notscuffed/repkg"
+                           RequestNavigate="Hyperlink_RequestNavigate">
+                    github.com/notscuffed/repkg
+                </Hyperlink>
+            </TextBlock>
+
+            <!-- Open GitHub Button -->
+            <Button Content="在 GitHub 上查看"
+                    HorizontalAlignment="Center"
+                    Click="OpenGitHub_Click"
+                    Padding="16,8"/>
+
+        </StackPanel>
+    </Grid>
+</Page>
