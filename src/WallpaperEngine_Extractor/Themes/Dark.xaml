@@ -1,23 +1,79 @@
 <ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:sys="clr-namespace:System;assembly=mscorlib">
 
-    <!-- Dark Theme Colors -->
+    <!-- ==================== Dark Theme Tokens ==================== -->
+
+    <!-- Brand / Accent -->
     <Color x:Key="AccentColor">#60CDFF</Color>
     <SolidColorBrush x:Key="AccentBrush" Color="{StaticResource AccentColor}"/>
-    
+
+    <!-- Surfaces -->
     <Color x:Key="BackgroundColor">#202020</Color>
     <SolidColorBrush x:Key="BackgroundBrush" Color="{StaticResource BackgroundColor}"/>
-    
+
     <Color x:Key="SurfaceColor">#2D2D2D</Color>
     <SolidColorBrush x:Key="SurfaceBrush" Color="{StaticResource SurfaceColor}"/>
-    
+
+    <Color x:Key="SurfaceElevatedColor">#383838</Color>
+    <SolidColorBrush x:Key="SurfaceElevatedBrush" Color="{StaticResource SurfaceElevatedColor}"/>
+
+    <!-- Text -->
     <Color x:Key="TextPrimaryColor">#FFFFFF</Color>
     <SolidColorBrush x:Key="TextPrimaryBrush" Color="{StaticResource TextPrimaryColor}"/>
-    
+
     <Color x:Key="TextSecondaryColor">#AAAAAA</Color>
     <SolidColorBrush x:Key="TextSecondaryBrush" Color="{StaticResource TextSecondaryColor}"/>
-    
+
+    <Color x:Key="TextTertiaryColor">#808080</Color>
+    <SolidColorBrush x:Key="TextTertiaryBrush" Color="{StaticResource TextTertiaryColor}"/>
+
+    <!-- Borders -->
     <Color x:Key="BorderColor">#404040</Color>
     <SolidColorBrush x:Key="BorderBrush" Color="{StaticResource BorderColor}"/>
+
+    <!-- States -->
+    <Color x:Key="SuccessColor">#6CCB5F</Color>
+    <SolidColorBrush x:Key="SuccessBrush" Color="{StaticResource SuccessColor}"/>
+
+    <Color x:Key="WarningColor">#FCE100</Color>
+    <SolidColorBrush x:Key="WarningBrush" Color="{StaticResource WarningColor}"/>
+
+    <Color x:Key="ErrorColor">#FF99A4</Color>
+    <SolidColorBrush x:Key="ErrorBrush" Color="{StaticResource ErrorColor}"/>
+
+    <Color x:Key="InfoColor">#60CDFF</Color>
+    <SolidColorBrush x:Key="InfoBrush" Color="{StaticResource InfoColor}"/>
+
+    <!-- ==================== Design Tokens ==================== -->
+
+    <!-- Spacing -->
+    <sys:Double x:Key="Spacing.XS">4</sys:Double>
+    <sys:Double x:Key="Spacing.S">8</sys:Double>
+    <sys:Double x:Key="Spacing.M">12</sys:Double>
+    <sys:Double x:Key="Spacing.L">16</sys:Double>
+    <sys:Double x:Key="Spacing.XL">24</sys:Double>
+    <sys:Double x:Key="Spacing.XXL">32</sys:Double>
+
+    <Thickness x:Key="CardPadding">16,12,16,12</Thickness>
+    <Thickness x:Key="PageMargin">16</Thickness>
+
+    <CornerRadius x:Key="Radius.S">4</CornerRadius>
+    <CornerRadius x:Key="Radius.M">8</CornerRadius>
+    <CornerRadius x:Key="Radius.L">12</CornerRadius>
+
+    <!-- Font sizes -->
+    <sys:Double x:Key="FontSize.Caption">11</sys:Double>
+    <sys:Double x:Key="FontSize.Body">13</sys:Double>
+    <sys:Double x:Key="FontSize.BodyStrong">14</sys:Double>
+    <sys:Double x:Key="FontSize.Subtitle">16</sys:Double>
+    <sys:Double x:Key="FontSize.Title">20</sys:Double>
+    <sys:Double x:Key="FontSize.Display">28</sys:Double>
+    <sys:Double x:Key="FontSize.Hero">36</sys:Double>
+
+    <!-- Control sizes -->
+    <sys:Double x:Key="ControlHeight.S">28</sys:Double>
+    <sys:Double x:Key="ControlHeight.M">32</sys:Double>
+    <sys:Double x:Key="ControlHeight.L">40</sys:Double>
 
 </ResourceDictionary>

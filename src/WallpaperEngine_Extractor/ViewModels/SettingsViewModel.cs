@@ -47,6 +47,12 @@ public partial class SettingsViewModel : ObservableObject
     [ObservableProperty]
     private bool _openOutputAfterExtract;
 
+    /// <summary>
+    /// 主题模式：跟随系统 / 浅色 / 深色
+    /// </summary>
+    [ObservableProperty]
+    private AppThemeMode _themeMode = AppThemeMode.System;
+
     // ==================== 构造函数 ====================
 
     public SettingsViewModel()
@@ -86,6 +92,10 @@ public partial class SettingsViewModel : ObservableObject
                             case "OpenOutputAfterExtract":
                                 OpenOutputAfterExtract = bool.Parse(parts[1].Trim());
                                 break;
+                            case "ThemeMode":
+                                if (Enum.TryParse<AppThemeMode>(parts[1].Trim(), out var mode))
+                                    ThemeMode = mode;
+                                break;
                         }
                     }
                 }
@@ -111,7 +121,8 @@ public partial class SettingsViewModel : ObservableObject
                 $"RecursiveSearch={RecursiveSearch}",
                 $"ConvertTexToPng={ConvertTexToPng}",
                 $"CopyProjectFiles={CopyProjectFiles}",
-                $"OpenOutputAfterExtract={OpenOutputAfterExtract}"
+                $"OpenOutputAfterExtract={OpenOutputAfterExtract}",
+                $"ThemeMode={ThemeMode}"
             };
             File.WriteAllLines(SettingsFile, lines);
         }

@@ -46,9 +46,7 @@ public partial class ExtractViewModel : ObservableObject
     [ObservableProperty]
     private string _statusText = "就绪";
 
-    /// <summary>日志文本，显示所有操作日志</summary>
-    [ObservableProperty]
-    private string _logText = "";
+
 
     /// <summary>整理器是否可见，当存在大图片时显示</summary>
     [ObservableProperty]
@@ -66,10 +64,15 @@ public partial class ExtractViewModel : ObservableObject
     [ObservableProperty]
     private BitmapImage? _previewImage;
 
-    // ==================== 集合属性 ====================
+    /// <summary>是否有预览图（控制预览区域可见性）</summary>
+    [ObservableProperty]
+    private bool _hasPreview;
 
-    /// <summary>日志消息集合，用于实时显示日志</summary>
-    public ObservableCollection<string> LogMessages { get; } = new();
+    /// <summary>大文件列表是否有内容（供空状态绑定）</summary>
+    [ObservableProperty]
+    private bool _hasLargeFiles;
+
+    // ==================== 集合属性 ====================
 
     /// <summary>大文件列表，提取完成后显示大于1MB的图片</summary>
     public ObservableCollection<LargeFileInfo> LargeFiles { get; } = new();
@@ -85,12 +88,17 @@ public partial class ExtractViewModel : ObservableObject
     /// <summary>待处理的PKG文件队列</summary>
     private string[]? _pendingFiles;
 
+    /// <summary>取消令牌源，用于取消提取操作</summary>
+    private CancellationTokenSource? _cts;
+
     // ==================== 构造函数 ====================
 
     public ExtractViewModel()
     {
         // 监听大文件列表变化，当添加第一个文件时更新预览
         LargeFiles.CollectionChanged += LargeFiles_CollectionChanged;
+        // 同步空状态属性
+        LargeFiles.CollectionChanged += (_, _) => HasLargeFiles = LargeFiles.Count > 0;
     }
 
     // ==================== 事件处理 ====================
@@ -148,7 +156,6 @@ public partial class ExtractViewModel : ObservableObject
         }
 
         HasSelectedFiles = true;
-        AddLog($"已选择 {_pendingFiles.Length} 个文件/文件夹");
     }
 
     /// <summary>
@@ -177,7 +184,6 @@ public partial class ExtractViewModel : ObservableObject
         }
 
         HasSelectedFiles = true;
-        AddLog($"已添加 {files.Length} 个文件，当前共 {_pendingFiles.Length} 个");
     }
 
     // ==================== 命令实现 ====================
@@ -192,7 +198,6 @@ public partial class ExtractViewModel : ObservableObject
         _pendingFiles = null;
         SelectedFiles.Clear();
         HasSelectedFiles = false;
-        AddLog("已清除选择");
     }
 
     /// <summary>
@@ -209,7 +214,23 @@ public partial class ExtractViewModel : ObservableObject
         if (dialog.ShowDialog() == true)
         {
             OutputDirectory = dialog.FolderName;
-            AddLog($"输出目录: {OutputDirectory}");
+        }
+    }
+
+    /// <summary>
+    /// 打开输出目录命令
+    /// </summary>
+    [RelayCommand]
+    private void OpenOutputFolder()
+    {
+        if (Directory.Exists(OutputDirectory))
+        {
+            Process.Start(new ProcessStartInfo
+            {
+                FileName = "explorer.exe",
+                Arguments = OutputDirectory,
+                UseShellExecute = true
+            });
         }
     }
 
@@ -222,58 +243,64 @@ public partial class ExtractViewModel : ObservableObject
     {
         if (_pendingFiles == null || _pendingFiles.Length == 0)
         {
-            AddLog("错误: 未选择任何文件");
             return;
         }
 
         IsExtracting = true;
         Progress = 0;
-        AddLog("开始提取...");
+        _cts = new CancellationTokenSource();
+        var token = _cts.Token;
 
         try
         {
             // 获取所有待处理的PKG文件
-            var filesToProcess = await Task.Run(() => GetPkgFiles(_pendingFiles, Settings.RecursiveSearch));
+            var filesToProcess = await Task.Run(() => GetPkgFiles(_pendingFiles, Settings.RecursiveSearch), token);
             var totalFiles = filesToProcess.Length;
             var processedFiles = 0;
 
             if (totalFiles == 0)
             {
-                AddLog("未找到 PKG 文件");
                 return;
             }
 
-            AddLog($"找到 {totalFiles} 个 PKG 文件");
 
             // 逐个处理PKG文件
+            var extractedDirs = new List<string>();
             foreach (var pkgFile in filesToProcess)
             {
+                token.ThrowIfCancellationRequested();
+
                 try
                 {
                     // 创建输出子文件夹
                     var outputDir = Path.Combine(OutputDirectory, Path.GetFileNameWithoutExtension(pkgFile));
                     Directory.CreateDirectory(outputDir);
 
-                    AddLog($"正在提取: {Path.GetFileName(pkgFile)}");
+                    extractedDirs.Add(outputDir);
+
 
                     // 执行提取
-                    await Task.Run(() => ExtractPkg(pkgFile, outputDir));
+                    await Task.Run(() => ExtractPkg(pkgFile, outputDir), token);
 
                     processedFiles++;
                     Progress = (int)((double)processedFiles / totalFiles * 100);
                     StatusText = $"正在提取... {processedFiles}/{totalFiles}";
                 }
-                catch (Exception ex)
+                catch (OperationCanceledException)
                 {
-                    AddLog($"提取失败 {Path.GetFileName(pkgFile)}: {ex.Message}");
+                    return;
+                }
+                catch (Exception)
+                {
                 }
             }
 
-            AddLog("提取完成!");
+            token.ThrowIfCancellationRequested();
+
             StatusText = "提取完成";
 
-            // 提取完成后扫描大文件
-            await ScanLargeFilesAsync();
+            // 提取完成后扫描大文件（仅限本次提取的目录）
+            await ScanLargeFilesAsync(extractedDirs.ToArray());
 
             // 如果设置了自动打开，则打开输出文件夹
             if (Settings.OpenOutputAfterExtract)
@@ -286,24 +313,35 @@ public partial class ExtractViewModel : ObservableObject
                 });
             }
         }
-        catch (Exception ex)
+        catch (Exception)
         {
-            AddLog($"错误: {ex.Message}");
             StatusText = "提取失败";
         }
         finally
         {
             IsExtracting = false;
+            _cts?.Dispose();
+            _cts = null;
         }
+    }
+
+    /// <summary>
+    /// 取消提取命令
+    /// </summary>
+    [RelayCommand]
+    private void CancelExtract()
+    {
+        _cts?.Cancel();
     }
 
     // ==================== 大文件扫描 ====================
 
     /// <summary>
     /// 扫描大文件异步任务
-    /// 在提取完成后扫描输出目录，找出大于1MB的图片文件
+    /// 在提取完成后扫描指定目录，找出大于1MB的图片文件
     /// </summary>
-    private async Task ScanLargeFilesAsync()
+    /// <param name="directories">要扫描的目录数组</param>
+    private async Task ScanLargeFilesAsync(string[] directories)
     {
         try
         {
@@ -311,10 +349,10 @@ public partial class ExtractViewModel : ObservableObject
             var imageExtensions = new[] { ".png", ".jpg", ".jpeg", ".gif", ".bmp", ".webp" };
             var minSize = 1024 * 1024;  // 1MB
 
-            await Task.Run(() =>
+            var results = await Task.Run(() =>
             {
-                // 遍历输出目录下的所有子文件夹
-                foreach (var dir in Directory.GetDirectories(OutputDirectory))
+                var found = new List<LargeFileInfo>();
+                foreach (var dir in directories)
                 {
                     foreach (var file in Directory.GetFiles(dir, "*.*", SearchOption.AllDirectories))
                     {
@@ -322,38 +360,36 @@ public partial class ExtractViewModel : ObservableObject
                         {
                             var ext = Path.GetExtension(file).ToLower();
                             var info = new FileInfo(file);
-                            // 只收集大于1MB的图片文件
                             if (info.Length >= minSize && imageExtensions.Contains(ext))
                             {
-                                Application.Current.Dispatcher.Invoke(() =>
+                                found.Add(new LargeFileInfo
                                 {
-                                    LargeFiles.Add(new LargeFileInfo
-                                    {
-                                        FilePath = file,
-                                        FileName = Path.GetFileName(file),
-                                        Size = info.Length,
-                                        RelativePath = Path.GetRelativePath(OutputDirectory, file)
-                                    });
+                                    FilePath = file,
+                                    FileName = Path.GetFileName(file),
+                                    Size = info.Length,
+                                    RelativePath = Path.GetRelativePath(OutputDirectory, file)
                                 });
                             }
                         }
                         catch { }
                     }
                 }
+                return found;
             });
+
+            foreach (var item in results)
+                LargeFiles.Add(item);
 
             SortFiles();
             OrganizerStatusText = $"找到 {LargeFiles.Count} 个大图片 (>1MB)";
             if (LargeFiles.Count > 0)
             {
                 IsOrganizerVisible = true;
-                AddLog($"整理: 发现 {LargeFiles.Count} 个大于1MB的图片文件");
                 UpdatePreviewImage(LargeFiles[0]);
             }
         }
-        catch (Exception ex)
+        catch (Exception)
         {
-            AddLog($"扫描大文件失败: {ex.Message}");
         }
     }
 
@@ -387,6 +423,11 @@ public partial class ExtractViewModel : ObservableObject
         }
     }
 
+    partial void OnPreviewImageChanged(BitmapImage? value)
+    {
+        HasPreview = value != null;
+    }
+
     // ==================== 排序命令 ====================
 
     /// <summary>
@@ -417,11 +458,15 @@ public partial class ExtractViewModel : ObservableObject
             ? LargeFiles.OrderByDescending(f => f.FileName).ToList()
             : LargeFiles.OrderByDescending(f => f.Size).ToList();
 
-        LargeFiles.Clear();
-        foreach (var item in sorted)
+        for (int i = 0; i < sorted.Count; i++)
         {
-            LargeFiles.Add(item);
+            if (i < LargeFiles.Count)
+                LargeFiles[i] = sorted[i];
+            else
+                LargeFiles.Add(sorted[i]);
         }
+        while (LargeFiles.Count > sorted.Count)
+            LargeFiles.RemoveAt(LargeFiles.Count - 1);
     }
 
     /// <summary>
@@ -445,7 +490,6 @@ public partial class ExtractViewModel : ObservableObject
         var selected = LargeFiles.Where(f => f.IsSelected).ToList();
         if (selected.Count == 0)
         {
-            AddLog("请先选择要保存的文件");
             return;
         }
 
@@ -457,6 +501,7 @@ public partial class ExtractViewModel : ObservableObject
 
         var saveDir = dialog.FolderName;
         var saved = 0;
+        var failed = 0;
 
         await Task.Run(() =>
         {
@@ -468,11 +513,13 @@ public partial class ExtractViewModel : ObservableObject
                     File.Copy(file.FilePath, dest, true);
                     saved++;
                 }
-                catch { }
+                catch
+                {
+                    failed++;
+                }
             }
         });
 
-        AddLog($"已保存 {saved} 个文件到: {saveDir}");
         Process.Start(new ProcessStartInfo { FileName = "explorer.exe", Arguments = saveDir, UseShellExecute = true });
     }
 
@@ -547,7 +594,6 @@ public partial class ExtractViewModel : ObservableObject
             var packageReader = new PackageReader { ReadEntryBytes = true };
             var package = packageReader.ReadFrom(reader);
 
-            AddLog($"PKG 格式: {package.Magic}, 条目数: {package.Entries.Count}");
 
             var totalEntries = package.Entries.Count;
             var processedEntries = 0;
@@ -564,7 +610,6 @@ public partial class ExtractViewModel : ObservableObject
 
                     if (entry.Bytes == null || entry.Bytes.Length == 0)
                     {
-                        AddLog($"跳过空条目: {entry.FullPath}");
                         continue;
                     }
 
@@ -594,10 +639,9 @@ public partial class ExtractViewModel : ObservableObject
                             var pngPath = Path.ChangeExtension(entryPath, targetExt);
                             File.WriteAllBytes(pngPath, imageResult.Bytes);
                         }
-                        catch (Exception ex)
+                        catch (Exception)
                         {
                             // 转换失败时保存原始文件
-                            AddLog($"TEX 转换失败: {entry.FullPath}, 保存原始文件: {ex.Message}");
                             File.WriteAllBytes(entryPath, entry.Bytes);
                         }
                     }
@@ -608,33 +652,15 @@ public partial class ExtractViewModel : ObservableObject
 
                     processedEntries++;
                 }
-                catch (Exception ex)
+                catch (Exception)
                 {
-                    AddLog($"提取条目失败: {entry.FullPath}: {ex.Message}");
                 }
             }
 
-            AddLog($"已提取 {processedEntries}/{totalEntries} 个文件");
         }
-        catch (Exception ex)
+        catch (Exception)
         {
-            AddLog($"解析 PKG 失败: {ex.Message}");
         }
-    }
-
-    /// <summary>
-    /// 添加日志消息
-    /// 线程安全地添加日志到界面
-    /// </summary>
-    /// <param name="message">日志消息</param>
-    private void AddLog(string message)
-    {
-        var time = DateTime.Now.ToString("HH:mm:ss");
-        Application.Current.Dispatcher.Invoke(() =>
-        {
-            LogMessages.Add($"[{time}] {message}");
-            LogText = string.Join(Environment.NewLine, LogMessages);
-        });
     }
 }
 

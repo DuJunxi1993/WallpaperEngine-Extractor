@@ -8,7 +8,27 @@
             <ResourceDictionary.MergedDictionaries>
                 <ui:ThemesDictionary Theme="Dark" />
                 <ui:ControlsDictionary />
+                <ResourceDictionary Source="pack://application:,,,/Themes/Dark.xaml" />
             </ResourceDictionary.MergedDictionaries>
+
+            <!-- 默认字体：Windows 11 推荐 Segoe UI Variable，缺失时回退 Segoe UI -->
+            <FontFamily x:Key="DefaultFontFamily">Segoe UI Variable, Segoe UI, Microsoft YaHei UI</FontFamily>
+            <FontFamily x:Key="MonospaceFontFamily">Cascadia Mono, Consolas, Courier New</FontFamily>
+
+            <!-- 默认控件样式覆盖 -->
+            <Style TargetType="{x:Type Window}">
+                <Setter Property="FontFamily" Value="{StaticResource DefaultFontFamily}"/>
+                <Setter Property="FontSize" Value="13"/>
+                <Setter Property="TextOptions.TextFormattingMode" Value="Display"/>
+                <Setter Property="TextOptions.TextRenderingMode" Value="ClearType"/>
+            </Style>
+            <Style TargetType="{x:Type Page}">
+                <Setter Property="FontFamily" Value="{StaticResource DefaultFontFamily}"/>
+                <Setter Property="FontSize" Value="13"/>
+            </Style>
+            <Style TargetType="{x:Type TextBlock}">
+                <Setter Property="FontFamily" Value="{StaticResource DefaultFontFamily}"/>
+            </Style>
         </ResourceDictionary>
     </Application.Resources>
 </Application>

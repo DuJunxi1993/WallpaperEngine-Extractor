@@ -1,74 +1,119 @@
 <Page x:Class="WallpaperEngine_Extractor.Views.AboutPage"
       xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
       xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-      Background="{DynamicResource BackgroundBrush}"
+      xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+      Background="Transparent"
       Title="关于">
 
     <Grid Margin="24">
         <StackPanel VerticalAlignment="Center"
                     HorizontalAlignment="Center"
-                    MaxWidth="400">
+                    MaxWidth="420">
 
             <!-- App Icon -->
-            <TextBlock Text="&#xE8B7;"
-                       FontFamily="Segoe MDL2 Assets"
-                       FontSize="72"
-                       HorizontalAlignment="Center"
-                       Margin="0,0,0,24"
-                       Foreground="{DynamicResource AccentBrush}"/>
-
-            <!-- App Name -->
-            <TextBlock Text="WallpaperEngine Extractor"
-                       FontSize="32"
-                       FontWeight="Bold"
-                       HorizontalAlignment="Center"
-                       Margin="0,0,0,8"
-                       Foreground="{DynamicResource TextPrimaryBrush}"/>
-
-            <!-- Version -->
-            <TextBlock Text="Version 1.0.0"
-                       FontSize="16"
-                       Opacity="0.7"
-                       HorizontalAlignment="Center"
-                       Margin="0,0,0,24"
-                       Foreground="{DynamicResource TextSecondaryBrush}"/>
-
-            <!-- Description -->
-            <Border Background="{DynamicResource SurfaceBrush}"
-                    CornerRadius="8"
-                    Padding="16"
-                    Margin="0,0,0,24">
-                <TextBlock Text="基于 RePKG 的 Wallpaper Engine PKG 提取工具，支持 TEX 转 PNG 图片功能。"
-                           TextWrapping="Wrap"
-                           TextAlignment="Center"
-                           FontSize="14"
-                           Foreground="{DynamicResource TextPrimaryBrush}"/>
+            <Border Width="96" Height="96"
+                    Background="{DynamicResource AccentFillColorDefaultBrush}"
+                    CornerRadius="{DynamicResource Radius.L}"
+                    HorizontalAlignment="Center"
+                    Margin="0,0,0,20">
+                <ui:SymbolIcon Symbol="Wallpaper24"
+                               FontSize="48"
+                               Foreground="White"
+                               HorizontalAlignment="Center"
+                               VerticalAlignment="Center"/>
             </Border>
 
-            <!-- Author -->
-            <TextBlock HorizontalAlignment="Center"
-                       Margin="0,0,0,8"
-                       Foreground="{DynamicResource TextPrimaryBrush}">
-                <Run Text="作者: "/>
-                <Run Text="dujunxi1993"/>
-            </TextBlock>
+            <!-- App Name -->
+            <TextBlock Text="Wallpaper Engine Extractor"
+                       FontSize="{DynamicResource FontSize.Display}"
+                       FontWeight="Bold"
+                       HorizontalAlignment="Center"
+                       Margin="0,0,0,4"
+                       Foreground="{DynamicResource TextPrimaryBrush}"/>
 
-            <!-- GitHub Link -->
-            <TextBlock HorizontalAlignment="Center"
-                       Margin="0,0,0,24"
-                       Foreground="{DynamicResource TextPrimaryBrush}">
-                <Run Text="源代码: "/>
-                <Hyperlink NavigateUri="https://github.com/notscuffed/repkg"
-                           RequestNavigate="Hyperlink_RequestNavigate">
-                    github.com/notscuffed/repkg
-                </Hyperlink>
-            </TextBlock>
+            <!-- Tagline -->
+            <TextBlock Text="Windows 11 Fluent Design"
+                       FontSize="{DynamicResource FontSize.Caption}"
+                       HorizontalAlignment="Center"
+                       Margin="0,0,0,20"
+                       Foreground="{DynamicResource AccentBrush}"/>
+
+            <!-- Description Card -->
+            <Border Background="{DynamicResource SurfaceBrush}"
+                    BorderBrush="{DynamicResource BorderBrush}"
+                    BorderThickness="1"
+                    CornerRadius="{DynamicResource Radius.M}"
+                    Padding="20,16"
+                    Margin="0,0,0,20">
+                <StackPanel>
+                    <TextBlock Text="基于 RePKG 的 Wallpaper Engine PKG 提取工具，支持 TEX 转 PNG 图片功能。"
+                               TextWrapping="Wrap"
+                               TextAlignment="Center"
+                               FontSize="{DynamicResource FontSize.Body}"
+                               LineHeight="20"
+                               Foreground="{DynamicResource TextPrimaryBrush}"/>
+                </StackPanel>
+            </Border>
+
+            <!-- Tech Stack -->
+            <Border Background="{DynamicResource SurfaceBrush}"
+                    BorderBrush="{DynamicResource BorderBrush}"
+                    BorderThickness="1"
+                    CornerRadius="{DynamicResource Radius.M}"
+                    Padding="16,12"
+                    Margin="0,0,0,20">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+
+                    <TextBlock Grid.Row="0" Grid.Column="0" Text="版本"
+                               Margin="0,0,16,4"
+                               Foreground="{DynamicResource TextSecondaryBrush}"/>
+                    <TextBlock Grid.Row="0" Grid.Column="1" Text="1.1.0"
+                               Margin="0,0,0,4"
+                               Foreground="{DynamicResource TextPrimaryBrush}"/>
+
+                    <TextBlock Grid.Row="1" Grid.Column="0" Text=".NET"
+                               Margin="0,0,16,4"
+                               Foreground="{DynamicResource TextSecondaryBrush}"/>
+                    <TextBlock Grid.Row="1" Grid.Column="1" Text="10.0 (Windows)"
+                               Margin="0,0,0,4"
+                               Foreground="{DynamicResource TextPrimaryBrush}"/>
+
+                    <TextBlock Grid.Row="2" Grid.Column="0" Text="作者"
+                               Margin="0,0,16,4"
+                               Foreground="{DynamicResource TextSecondaryBrush}"/>
+                    <TextBlock Grid.Row="2" Grid.Column="1" Text="dujunxi1993"
+                               Margin="0,0,0,4"
+                               Foreground="{DynamicResource TextPrimaryBrush}"/>
+
+                    <TextBlock Grid.Row="3" Grid.Column="0" Text="许可证"
+                               Margin="0,0,16,0"
+                               Foreground="{DynamicResource TextSecondaryBrush}"/>
+                    <TextBlock Grid.Row="3" Grid.Column="1" Text="MIT"
+                               Foreground="{DynamicResource TextPrimaryBrush}"/>
+                </Grid>
+            </Border>
 
             <!-- Open GitHub Button -->
-            <Button Content="在 GitHub 上查看"
-                    HorizontalAlignment="Center"
-                    Click="OpenGitHub_Click"
-                    Padding="16,8"/>
+            <ui:Button Content="在 GitHub 上查看 RePKG"
+                       Click="OpenGitHub_Click"
+                       Appearance="Primary"
+                       HorizontalAlignment="Center"
+                       Height="{DynamicResource ControlHeight.L}"
+                       MinWidth="200">
+                <ui:Button.Icon>
+                    <ui:SymbolIcon Symbol="Open24"/>
+                </ui:Button.Icon>
+            </ui:Button>
 
         </StackPanel>
     </Grid>
