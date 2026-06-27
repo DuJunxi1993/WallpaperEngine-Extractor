@@ -1,5 +1,6 @@
 using System.ComponentModel;
 using System.Windows;
+using Wpf.Ui.Appearance;
 using WallpaperEngine_Extractor.ViewModels;
 using WallpaperEngine_Extractor.Views;
 
@@ -19,6 +20,9 @@ public partial class MainWindow : Wpf.Ui.Controls.FluentWindow
         // 从设置中读取主题模式并应用（默认 System = 跟随系统）
         var settings = new SettingsViewModel();
         App.ApplyTheme(settings.ThemeMode);
+
+        // 启用系统主题变化实时监听：用户切换 Windows 主题时，WPF-UI 自动切换主题字典
+        SystemThemeWatcher.Watch(this as System.Windows.Window);
 
         Loaded += MainWindow_Loaded;
     }

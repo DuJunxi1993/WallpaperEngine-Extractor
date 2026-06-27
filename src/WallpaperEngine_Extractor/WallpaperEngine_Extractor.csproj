@@ -7,7 +7,7 @@
     <UseWPF>true</UseWPF>
     <AssemblyName>WallpaperEngine_Extractor</AssemblyName>
     <RootNamespace>WallpaperEngine_Extractor</RootNamespace>
-    <Version>0.1.1</Version>
+    <Version>0.1.2</Version>
     <Authors>dujunxi1993</Authors>
     <Product>Wallpaper Engine Extractor</Product>
     <Description>Wallpaper Engine PKG Extractor with Windows 11 UI</Description>
