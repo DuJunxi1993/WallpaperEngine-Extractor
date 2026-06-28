@@ -44,3 +44,7 @@ packages/
 
 # macOS
 .DS_Store
+
+# Distribution build output
+dist/
+publish/
