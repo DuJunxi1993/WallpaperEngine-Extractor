@@ -137,15 +137,8 @@ public partial class ExtractPage : Page
         }
     }
 
-    // ============== 预览 16:9 比例 ==============
+    // ============== 预览 ==============
 
-    private void PreviewContainer_SizeChanged(object sender, SizeChangedEventArgs e)
-    {
-        if (PreviewBorder == null) return;
-        var w = e.NewSize.Width;
-        if (double.IsNaN(w) || double.IsInfinity(w) || w <= 0) return;
-        var h = w * 9.0 / 16.0;
-        if (Math.Abs(PreviewBorder.Height - h) > 0.5)
-            PreviewBorder.Height = h;
-    }
+    // 16:9 比例由 PreviewBorder 内的 <Viewbox Stretch="Uniform"> 自动保持，
+    // 不需要在 SizeChanged 里手算高比例 —— 旧版本的 PreviewContainer_SizeChanged 已删除。
 }

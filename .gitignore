@@ -51,3 +51,4 @@ publish/
 
 # Sandbox / permission diagnostics (DSH)
 .acl-reports/
+.session/

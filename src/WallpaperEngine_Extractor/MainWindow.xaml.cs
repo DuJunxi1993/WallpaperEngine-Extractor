@@ -11,7 +11,7 @@ namespace WallpaperEngine_Extractor;
 /// <summary>
 /// 主窗口类
 /// 使用 WPF-UI 的 FluentWindow 实现 Windows 11 风格界面
-/// 窗口采用 Mica 背景效果与自定义标题栏
+/// 窗口采用 Mica 背景效果 (WindowBackdropType="Mica") 与自定义标题栏 (ExtendsContentIntoTitleBar)
 /// </summary>
 public partial class MainWindow : Wpf.Ui.Controls.FluentWindow, INotifyPropertyChanged
 {

@@ -11,7 +11,8 @@
         MinHeight="900"
         WindowStartupLocation="CenterScreen"
         SizeToContent="Manual"
-        ExtendsContentIntoTitleBar="True">
+        ExtendsContentIntoTitleBar="True"
+        WindowBackdropType="Mica">
 
     <Window.Resources>
         <converters:ThemeModeToSymbolConverter x:Key="ThemeModeToSymbolConverter"/>
@@ -26,7 +27,7 @@
         <ui:TitleBar Grid.Row="0"
                      Title=""
                      Padding="6,0,16,0"
-                     Background="{DynamicResource PanelBackgroundBrush}"
+                     Background="Transparent"
                      ShowMaximize="True"
                      ShowMinimize="True"
                      CanMaximize="True">
