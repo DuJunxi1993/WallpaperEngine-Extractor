@@ -1,7 +1,10 @@
+using System.Collections.Specialized;
 using System.Diagnostics;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
 using System.Windows.Media;
+using System.Windows.Threading;
 using Microsoft.Win32;
 using WallpaperEngine_Extractor.ViewModels;
 
@@ -16,6 +19,41 @@ public partial class ExtractPage : Page
     public ExtractPage()
     {
         InitializeComponent();
+
+        // 日志面板自动滚动：新日志进来时滚到底部，始终显示最新一行。
+        Loaded += ExtractPage_Loaded;
+        Unloaded += ExtractPage_Unloaded;
+    }
+
+    private void ExtractPage_Loaded(object sender, RoutedEventArgs e)
+    {
+        if (DataContext is not ExtractViewModel vm)
+            return;
+
+        // 先退订再订阅，避免 Loaded 多次触发导致重复订阅
+        vm.LogEntries.CollectionChanged -= LogEntries_CollectionChanged;
+        vm.LogEntries.CollectionChanged += LogEntries_CollectionChanged;
+    }
+
+    private void ExtractPage_Unloaded(object sender, RoutedEventArgs e)
+    {
+        if (DataContext is ExtractViewModel vm)
+            vm.LogEntries.CollectionChanged -= LogEntries_CollectionChanged;
+    }
+
+    /// <summary>
+    /// 日志集合变化：追加新条目后滚动到底部。
+    /// 用 Background 优先级延后一帧，等 ItemsControl 把新项布局进可视树后再滚，
+    /// 否则 ScrollToEnd 可能滚不到最后一项。
+    /// </summary>
+    private void LogEntries_CollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
+    {
+        if (e.Action != NotifyCollectionChangedAction.Add)
+            return;
+
+        Dispatcher.BeginInvoke(
+            new Action(() => LogScrollViewer?.ScrollToEnd()),
+            DispatcherPriority.Background);
     }
 
     // ============== 拖放事件 ==============
@@ -85,6 +123,20 @@ public partial class ExtractPage : Page
 
     // ============== 浏览按钮 ==============
 
+    /// <summary>
+    /// "添加"按钮：打开选择文件 / 选择文件夹的上下文菜单。
+    /// OpenFileDialog 与 OpenFolderDialog 无法同时选文件和目录，所以用一个菜单让用户二选一。
+    /// </summary>
+    private void ShowAddMenu_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is not FrameworkElement element || element.ContextMenu is not ContextMenu menu)
+            return;
+
+        menu.PlacementTarget = element;
+        menu.Placement = PlacementMode.Bottom;
+        menu.IsOpen = true;
+    }
+
     private void BrowseFiles_Click(object sender, RoutedEventArgs e)
     {
         var dialog = new OpenFileDialog
@@ -107,16 +159,21 @@ public partial class ExtractPage : Page
     {
         var dialog = new OpenFolderDialog
         {
-            Title = "选择包含 PKG 文件的文件夹"
+            Title = "选择包含 PKG 文件的文件夹",
+            // 文件夹支持 Ctrl/Shift 多选，返回 FolderNames 数组
+            Multiselect = true
         };
 
         if (dialog.ShowDialog() == true && DataContext is ExtractViewModel vm)
         {
-            var files = new[] { dialog.FolderName };
+            var folders = dialog.FolderNames;
+            if (folders.Length == 0)
+                return;
+
             if (vm.HasSelectedFiles)
-                vm.AddFiles(files);
+                vm.AddFiles(folders);
             else
-                vm.SetFiles(files);
+                vm.SetFiles(folders);
         }
     }
 

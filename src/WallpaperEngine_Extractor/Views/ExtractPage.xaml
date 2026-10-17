@@ -111,10 +111,14 @@
                 </Style>
             </Grid.Resources>
 
-            <!-- 卡片 1：已选择的文件（与下方卡片同底色 #FEFEFE） -->
+            <!-- 卡片 1：已选择的文件（与下方卡片同底色 #FEFEFE）
+                 MaxHeight 限制卡片高度，避免多选几十个文件/文件夹时把整行撑高、
+                 把下方"输出图片/预览/提取日志"挤出可视区。超出部分由内部
+                 ScrollViewer 滚动查看。 -->
             <Border Grid.Column="0"
                     Style="{StaticResource InputCardStyle}"
-                    MinHeight="92">
+                    MinHeight="92"
+                    MaxHeight="230">
                 <Grid>
                     <!-- 拖放靶作为 Grid 第一个 child，铺满 -->
                     <Border x:Name="FileSelectionBorder"
@@ -126,52 +130,30 @@
                             Drop="FileSelectionBorder_Drop"/>
                     <Grid>
                         <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="*"/>
-                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>   <!-- Row 0: 标题 -->
+                            <RowDefinition Height="*"/>      <!-- Row 1: 内容（空状态 / 已选列表） -->
+                            <RowDefinition Height="Auto"/>   <!-- Row 2: 计数 + 按钮（同行） -->
                         </Grid.RowDefinitions>
 
-                        <!-- 标题：与其他卡片 SectionTitleStyle 统一 -->
-                        <DockPanel Grid.Row="0" Margin="0,0,0,8" LastChildFill="False">
-                            <TextBlock DockPanel.Dock="Left" Text="选择文件"
-                                       Style="{StaticResource SectionTitleStyle}"
-                                       Margin="0"/>
-                            <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
-                                <ui:Button Content="添加" Click="BrowseFiles_Click"
-                                           Appearance="Secondary"
-                                           Style="{StaticResource InlineButtonStyle}"
-                                           Margin="0,0,4,0"/>
-                                <ui:Button Content="清除"
-                                           Command="{Binding ClearFilesCommand}"
-                                           Appearance="Secondary"
-                                           Style="{StaticResource InlineButtonStyle}"/>
-                            </StackPanel>
-                        </DockPanel>
+                        <!-- Row 0: 标题（只文字，按钮挪到 Row 2） -->
+                        <TextBlock Grid.Row="0" Margin="0,0,0,8" Text="选择文件"
+                                   Style="{StaticResource SectionTitleStyle}"/>
 
-                        <!-- 空状态：拖放引导 -->
+                        <!-- Row 1: 空状态——拖放引导 -->
                         <Grid Grid.Row="1" Visibility="{Binding HasSelectedFiles, Converter={StaticResource InverseBoolToVisibilityConverter}}">
                             <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
                                 <ui:SymbolIcon Symbol="ArrowUpload24"
-                                               FontSize="28"
+                                               FontSize="20"
                                                HorizontalAlignment="Center"
-                                               Foreground="{DynamicResource AccentTextFillColorPrimaryBrush}"/>
+                                               Foreground="{DynamicResource TextFillColorSecondaryBrush}"/>
                                 <TextBlock Text="拖放 PKG 文件或文件夹到此处"
                                            HorizontalAlignment="Center"
                                            Margin="0,8,0,8"
-                                           Foreground="{DynamicResource TextFillColorPrimaryBrush}"/>
-                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                                    <ui:Button Content="选择文件" Click="BrowseFiles_Click"
-                                               Appearance="Secondary"
-                                               Style="{StaticResource InlineButtonStyle}"
-                                               Margin="0,0,6,0" ToolTip="Ctrl+O"/>
-                                    <ui:Button Content="选择文件夹" Click="BrowseFolder_Click"
-                                               Appearance="Secondary"
-                                               Style="{StaticResource InlineButtonStyle}"/>
-                                </StackPanel>
+                                           Style="{StaticResource CaptionTextStyle}"/>
                             </StackPanel>
                         </Grid>
 
-                        <!-- 已选列表 -->
+                        <!-- Row 1: 已选列表 -->
                         <ScrollViewer Grid.Row="1" Grid.RowSpan="1"
                                       Visibility="{Binding HasSelectedFiles, Converter={StaticResource BoolToVisibilityConverter}}"
                                       VerticalScrollBarVisibility="Auto">
@@ -211,9 +193,32 @@
                             </ItemsControl>
                         </ScrollViewer>
 
-                        <TextBlock Grid.Row="2" Margin="0,4,0,0"
-                                   Style="{StaticResource CaptionTextStyle}"
-                                   Text="{Binding SelectedFiles.Count, StringFormat='共 {0} 项'}"/>
+                        <!-- Row 2: 底部一行——计数（左，撑开空间）+ 添加/清除（右）
+                             计数和按钮共用一行，紧贴卡片底部边缘。 -->
+                        <DockPanel Grid.Row="2" Margin="0,8,0,0" LastChildFill="False">
+                            <ui:Button Content="清除"
+                                       DockPanel.Dock="Right"
+                                       Command="{Binding ClearFilesCommand}"
+                                       Appearance="Secondary"
+                                       Style="{StaticResource InlineButtonStyle}"
+                                       Margin="4,0,0,0"/>
+                            <ui:Button Content="添加"
+                                       DockPanel.Dock="Right"
+                                       Appearance="Primary"
+                                       Style="{StaticResource InlineButtonStyle}"
+                                       Click="ShowAddMenu_Click"
+                                       ToolTip="添加文件 / 文件夹">
+                            <ui:Button.ContextMenu>
+                                <ContextMenu>
+                                    <MenuItem Header="添加文件..." Click="BrowseFiles_Click"/>
+                                    <MenuItem Header="添加文件夹..." Click="BrowseFolder_Click"/>
+                                </ContextMenu>
+                            </ui:Button.ContextMenu>
+                        </ui:Button>
+                            <TextBlock VerticalAlignment="Center"
+                                       Style="{StaticResource CaptionTextStyle}"
+                                       Text="{Binding SelectedFiles.Count, StringFormat='共 {0} 项'}"/>
+                        </DockPanel>
                     </Grid>
                 </Grid>
             </Border>
@@ -328,7 +333,7 @@
                                     Visibility="{Binding HasLargeFiles, Converter={StaticResource InverseBoolToVisibilityConverter}}">
                             <ui:SymbolIcon Symbol="Image24"
                                            FontSize="48"
-                                           Foreground="{DynamicResource TextFillColorTertiaryBrush}"
+                                           Foreground="{DynamicResource TextFillColorSecondaryBrush}"
                                            HorizontalAlignment="Center"/>
                             <TextBlock Text="暂无大于 1MB 的图片"
                                        HorizontalAlignment="Center"
@@ -444,19 +449,15 @@
                                     Margin="10,0,0,0"
                                     VerticalAlignment="Center">
                                 <TextBlock Text="{Binding LogEntries.Count, StringFormat='共 {0} 条'}"
-                                           FontSize="{DynamicResource FontSize.Caption}"
-                                           Foreground="{DynamicResource TextFillColorSecondaryBrush}"/>
+                                           Style="{StaticResource CaptionTextStyle}"/>
                             </Border>
                         </StackPanel>
                     </DockPanel>
                     <Grid Grid.Row="1">
-                        <TextBlock Text="尚无日志，点击开始提取后会显示处理记录"
-                                   HorizontalAlignment="Center"
-                                   VerticalAlignment="Center"
-                                   FontSize="{DynamicResource FontSize.Caption}"
-                                   Foreground="{DynamicResource TextFillColorSecondaryBrush}">
-                            <TextBlock.Style>
-                                <Style TargetType="TextBlock">
+                        <StackPanel HorizontalAlignment="Center"
+                                    VerticalAlignment="Center">
+                            <StackPanel.Style>
+                                <Style TargetType="StackPanel">
                                     <Setter Property="Visibility" Value="Collapsed"/>
                                     <Style.Triggers>
                                         <DataTrigger Binding="{Binding LogEntries.Count}" Value="0">
@@ -464,9 +465,18 @@
                                         </DataTrigger>
                                     </Style.Triggers>
                                 </Style>
-                            </TextBlock.Style>
-                        </TextBlock>
-                        <ScrollViewer VerticalScrollBarVisibility="Auto"
+                            </StackPanel.Style>
+                            <TextBlock Text="尚无日志"
+                                       HorizontalAlignment="Center"
+                                       Style="{StaticResource CaptionTextStyle}"/>
+                            <TextBlock Text="点击开始提取后会显示处理记录"
+                                       HorizontalAlignment="Center"
+                                       Margin="0,4,0,0"
+                                       Style="{StaticResource CaptionTextStyle}"
+                                       Opacity="0.7"/>
+                        </StackPanel>
+                        <ScrollViewer x:Name="LogScrollViewer"
+                                      VerticalScrollBarVisibility="Auto"
                                       HorizontalScrollBarVisibility="Disabled">
                             <ItemsControl ItemsSource="{Binding LogEntries}"
                                           ItemTemplate="{StaticResource LogEntryTemplate}">
@@ -495,7 +505,7 @@
                                     Visibility="{Binding HasPreview, Converter={StaticResource InverseBoolToVisibilityConverter}}">
                             <ui:SymbolIcon Symbol="Image24"
                                            FontSize="48"
-                                           Foreground="{DynamicResource TextFillColorTertiaryBrush}"
+                                           Foreground="{DynamicResource TextFillColorSecondaryBrush}"
                                            HorizontalAlignment="Center"/>
                             <TextBlock Text="在左侧列表中选择一项以预览"
                                        HorizontalAlignment="Center"
@@ -537,7 +547,6 @@
                     <TextBlock DockPanel.Dock="Right"
                                Text="{Binding Progress, StringFormat='{}{0}%'}"
                                Style="{StaticResource CaptionTextStyle}"
-                               Foreground="{DynamicResource TextFillColorSecondaryBrush}"
                                VerticalAlignment="Center"/>
                 </DockPanel>
                 <ProgressBar Grid.Row="1"
