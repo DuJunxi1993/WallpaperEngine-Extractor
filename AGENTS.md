@@ -59,4 +59,4 @@ Settings stored as key=value at `%APPDATA%\WallpaperEngine_Extractor\settings.tx
 - WPF-UI `FluentWindow` base class, not plain `Window`
 - All visual styling uses `DynamicResource` tokens from `Themes/*.xaml` — no hardcoded colors, sizes, or spacing literals in views
 - Use `ui:SymbolIcon` (Fluent Icons) instead of legacy `Segoe MDL2 Assets` glyph codes
-- Log output uses `LogLevel` enum (`Info`/`Success`/`Warning`/`Error`) for color coding via `LogLevelToBrushConverter`
+- Extract page logs entries via `ExtractViewModel.Log(LogLevel, string)`. `LogLevel { Info, Success, Warning, Error }` maps to `InfoBrush/SuccessBrush/WarningBrush/ErrorBrush` via `LogLevelToBrushConverter`. The "提取日志" panel is an `Expander` (`IsLogExpanded`), default **collapsed**; expanding shows a scrollable list of `LogEntry` rows (timestamp · level chip · message). Log calls are thread-safe (dispatched to UI thread) and capped at 500 entries.

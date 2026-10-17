@@ -48,3 +48,6 @@ packages/
 # Distribution build output
 dist/
 publish/
+
+# Sandbox / permission diagnostics (DSH)
+.acl-reports/

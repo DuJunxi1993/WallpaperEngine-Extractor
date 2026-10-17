@@ -37,11 +37,11 @@ WallpaperEngine Extractor 是一款基于 Windows 11 UI 风格（WinUI 3/WPF）�
 ### 运行环境
 
 - **操作系统**：Windows 10 (1809+) / Windows 11
-- **.NET 运行时**：.NET 8.0 Runtime（或使用自包含版本无需安装）
+- **.NET 运行时**：.NET 10.0 Runtime（或使用自包含版本无需安装）
 
 ### 开发环境
 
-- **.NET SDK**：.NET 8.0 SDK
+- **.NET SDK**：.NET 10.0 SDK
 - **IDE**：Visual Studio 2022/2024（推荐）
 - **工作负载**：.NET 桌面开发
 
@@ -94,8 +94,7 @@ dotnet publish -c Release -r win-x64 --self-contained true -p:PublishSingleFile=
 ```
 WallpaperEngine_Extractor/
 ├── WallpaperEngine_Extractor.sln    # Visual Studio 解决方案文件
-├── README.md                         # 英文说明文档
-├── README_zh.md                      # 中文说明文档
+├── README.md                         # 项目说明文档
 ├── .gitignore                        # Git 忽略配置
 │
 ├── src/
@@ -158,11 +157,11 @@ WallpaperEngine_Extractor/
 
 | 组件 | 技术 | 版本 |
 |------|------|------|
-| UI 框架 | WPF + WinUI 3 (WPF-UI) | 4.2.0 |
-| MVVM 框架 | CommunityToolkit.Mvvm | 8.2.2 |
+| UI 框架 | WPF + WinUI 3 (WPF-UI) | 4.3.0 |
+| MVVM 框架 | CommunityToolkit.Mvvm | 8.4.2 |
 | PKG 解析 | RePKG.Core + RePKG.Application | - |
 | 图片转换 | SixLabors.ImageSharp | 2.1.9 |
-| .NET | .NET | 8.0 |
+| .NET | .NET | 10.0 |
 
 ### 设计模式
 

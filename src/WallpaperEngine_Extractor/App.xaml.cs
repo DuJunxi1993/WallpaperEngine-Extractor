@@ -72,8 +72,10 @@ public partial class App : Application
         const string darkPath = "pack://application:,,,/Themes/Dark.xaml";
         const string lightPath = "pack://application:,,,/Themes/Light.xaml";
 
-        var isDark = ApplicationThemeManager.GetAppTheme() == ApplicationTheme.Dark;
-        var targetPath = isDark ? darkPath : lightPath;
+        // 用 WPF-UI 检测到的实际系统主题（避免用静态字段的过期值）
+        var detected = ApplicationThemeManager.GetAppTheme();
+        var targetPath = detected == ApplicationTheme.Dark ? darkPath : lightPath;
+        System.Diagnostics.Debug.WriteLine($"[Theme] SwapThemeDictionary: detected={detected}, target={targetPath}");
 
         // 移除已有的自定义主题字典
         ResourceDictionary? toRemove = null;

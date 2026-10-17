@@ -20,7 +20,7 @@ namespace WallpaperEngine_Extractor.ViewModels;
 /// 负责PKG文件的提取逻辑、大文件扫描、图片预览等功能
 /// 使用MVVM模式，通过CommunityToolkit.Mvvm实现数据绑定和命令
 /// </summary>
-public enum SortMode { Name, Size }  // 排序模式：按名称或按大小
+public enum SortMode { Name, Size, Time }  // 排序模式：按名称/大小/时间
 
 public partial class ExtractViewModel : ObservableObject
 {
@@ -72,10 +72,17 @@ public partial class ExtractViewModel : ObservableObject
     [ObservableProperty]
     private bool _hasLargeFiles;
 
+    /// <summary>提取日志面板是否展开</summary>
+    [ObservableProperty]
+    private bool _isLogExpanded;
+
     // ==================== 集合属性 ====================
 
     /// <summary>大文件列表，提取完成后显示大于1MB的图片</summary>
     public ObservableCollection<LargeFileInfo> LargeFiles { get; } = new();
+
+    /// <summary>日志条目集合，绑到"提取日志"面板（默认折叠）</summary>
+    public ObservableCollection<LogEntry> LogEntries { get; } = new();
 
     /// <summary>已选择的文件列表，显示用户选择的文件/文件夹</summary>
     public ObservableCollection<SelectedFileInfo> SelectedFiles { get; } = new();
@@ -84,6 +91,8 @@ public partial class ExtractViewModel : ObservableObject
     public SettingsViewModel Settings { get; } = new();
 
     // ==================== 私有字段 ====================
+
+    private const int MaxLogEntries = 500;
 
     /// <summary>待处理的PKG文件队列</summary>
     private string[]? _pendingFiles;
@@ -99,6 +108,30 @@ public partial class ExtractViewModel : ObservableObject
         LargeFiles.CollectionChanged += LargeFiles_CollectionChanged;
         // 同步空状态属性
         LargeFiles.CollectionChanged += (_, _) => HasLargeFiles = LargeFiles.Count > 0;
+    }
+
+    // ==================== 日志 ====================
+
+    /// <summary>
+    /// 写入一条日志（线程安全：会自动 marshal 回 UI 线程）。
+    /// 最大保留 <see cref="MaxLogEntries"/> 条，超出从头部截断。
+    /// </summary>
+    public void Log(LogLevel level, string message)
+    {
+        var entry = new LogEntry(level, message);
+        void AddOnUi()
+        {
+            LogEntries.Add(entry);
+            // 简单的容量截断，避免长时间运行无限增长
+            while (LogEntries.Count > MaxLogEntries)
+                LogEntries.RemoveAt(0);
+        }
+
+        var dispatcher = System.Windows.Application.Current?.Dispatcher;
+        if (dispatcher != null && !dispatcher.CheckAccess())
+            dispatcher.BeginInvoke(AddOnUi);
+        else
+            AddOnUi();
     }
 
     // ==================== 事件处理 ====================
@@ -251,6 +284,8 @@ public partial class ExtractViewModel : ObservableObject
         _cts = new CancellationTokenSource();
         var token = _cts.Token;
 
+        Log(LogLevel.Info, $"开始提取，共 {_pendingFiles.Length} 项输入");
+
         try
         {
             // 获取所有待处理的PKG文件
@@ -260,9 +295,11 @@ public partial class ExtractViewModel : ObservableObject
 
             if (totalFiles == 0)
             {
+                Log(LogLevel.Warning, "未找到任何 PKG 文件");
                 return;
             }
 
+            Log(LogLevel.Info, $"发现 {totalFiles} 个 PKG 文件待处理");
 
             // 逐个处理PKG文件
             var extractedDirs = new List<string>();
@@ -278,6 +315,7 @@ public partial class ExtractViewModel : ObservableObject
 
                     extractedDirs.Add(outputDir);
 
+                    Log(LogLevel.Info, $"→ {Path.GetFileName(pkgFile)}  →  {Path.GetFileName(outputDir)}");
 
                     // 执行提取
                     await Task.Run(() => ExtractPkg(pkgFile, outputDir), token);
@@ -288,16 +326,19 @@ public partial class ExtractViewModel : ObservableObject
                 }
                 catch (OperationCanceledException)
                 {
+                    Log(LogLevel.Warning, "提取被取消");
                     return;
                 }
-                catch (Exception)
+                catch (Exception ex)
                 {
+                    Log(LogLevel.Error, $"处理失败：{Path.GetFileName(pkgFile)} — {ex.Message}");
                 }
             }
 
             token.ThrowIfCancellationRequested();
 
             StatusText = "提取完成";
+            Log(LogLevel.Success, $"提取完成：{processedFiles}/{totalFiles} 个 PKG");
 
             // 提取完成后扫描大文件（仅限本次提取的目录）
             await ScanLargeFilesAsync(extractedDirs.ToArray());
@@ -367,7 +408,8 @@ public partial class ExtractViewModel : ObservableObject
                                     FilePath = file,
                                     FileName = Path.GetFileName(file),
                                     Size = info.Length,
-                                    RelativePath = Path.GetRelativePath(OutputDirectory, file)
+                                    RelativePath = Path.GetRelativePath(OutputDirectory, file),
+                                    ModifiedTime = System.IO.File.GetLastWriteTime(file)
                                 });
                             }
                         }
@@ -386,10 +428,16 @@ public partial class ExtractViewModel : ObservableObject
             {
                 IsOrganizerVisible = true;
                 UpdatePreviewImage(LargeFiles[0]);
+                Log(LogLevel.Info, $"扫描到 {LargeFiles.Count} 个大于 1MB 的图片");
+            }
+            else
+            {
+                Log(LogLevel.Info, "未在输出目录中找到大于 1MB 的图片");
             }
         }
-        catch (Exception)
+        catch (Exception ex)
         {
+            Log(LogLevel.Error, $"扫描大图片失败：{ex.Message}");
         }
     }
 
@@ -449,14 +497,26 @@ public partial class ExtractViewModel : ObservableObject
     }
 
     /// <summary>
+    /// 按修改时间排序命令
+    /// </summary>
+    [RelayCommand]
+    private void SortByTime()
+    {
+        CurrentSortMode = SortMode.Time;
+    }
+
+    /// <summary>
     /// 执行文件排序
     /// 根据当前排序模式对LargeFiles集合进行排序
     /// </summary>
     private void SortFiles()
     {
-        var sorted = CurrentSortMode == SortMode.Name
-            ? LargeFiles.OrderByDescending(f => f.FileName).ToList()
-            : LargeFiles.OrderByDescending(f => f.Size).ToList();
+        var sorted = CurrentSortMode switch
+        {
+            SortMode.Size => LargeFiles.OrderByDescending(f => f.Size).ToList(),
+            SortMode.Time => LargeFiles.OrderByDescending(f => f.ModifiedTime).ToList(),
+            _             => LargeFiles.OrderByDescending(f => f.FileName).ToList(),
+        };
 
         for (int i = 0; i < sorted.Count; i++)
         {
@@ -586,6 +646,10 @@ public partial class ExtractViewModel : ObservableObject
     /// <param name="outputDir">输出目录路径</param>
     private void ExtractPkg(string pkgPath, string outputDir)
     {
+        var pkgName = Path.GetFileName(pkgPath);
+        var texConverted = 0;
+        var texFallback = 0;
+
         try
         {
             using var stream = File.OpenRead(pkgPath);
@@ -638,11 +702,14 @@ public partial class ExtractViewModel : ObservableObject
 
                             var pngPath = Path.ChangeExtension(entryPath, targetExt);
                             File.WriteAllBytes(pngPath, imageResult.Bytes);
+                            texConverted++;
                         }
-                        catch (Exception)
+                        catch (Exception texEx)
                         {
                             // 转换失败时保存原始文件
                             File.WriteAllBytes(entryPath, entry.Bytes);
+                            texFallback++;
+                            Log(LogLevel.Warning, $"TEX 转换失败，已保留原文件：{entry.FullPath} ({texEx.Message})");
                         }
                     }
                     else
@@ -652,14 +719,19 @@ public partial class ExtractViewModel : ObservableObject
 
                     processedEntries++;
                 }
-                catch (Exception)
+                catch (Exception ex)
                 {
+                    Log(LogLevel.Error, $"条目写入失败：{entry.FullPath} ({ex.Message})");
                 }
             }
 
+            Log(LogLevel.Success,
+                $"{pkgName}：共 {processedEntries}/{totalEntries} 条目" +
+                (Settings.ConvertTexToPng ? $"，TEX 转换 {texConverted} 条" + (texFallback > 0 ? $"，{texFallback} 条已回退原文件" : "") : ""));
         }
-        catch (Exception)
+        catch (Exception ex)
         {
+            Log(LogLevel.Error, $"读取 PKG 失败：{pkgName} ({ex.Message})");
         }
     }
 }
@@ -677,6 +749,7 @@ public partial class LargeFileInfo : ObservableObject
     public string FileName { get; set; } = "";
     public long Size { get; set; }
     public string RelativePath { get; set; } = "";
+    public DateTime ModifiedTime { get; set; } = DateTime.MinValue;
 
     /// <summary>
     /// 文件大小的人类可读格式

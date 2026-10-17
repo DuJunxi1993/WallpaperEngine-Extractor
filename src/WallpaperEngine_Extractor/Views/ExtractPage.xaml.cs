@@ -126,8 +126,14 @@ public partial class ExtractPage : Page
     {
         if (DataContext is ExtractViewModel vm)
         {
-            var selectedItem = LargeFilesList.SelectedItem as LargeFileInfo;
-            vm.OnLargeFileSelected(selectedItem);
+            // 同步 ListBox.SelectedItems 到每个 LargeFileInfo.IsSelected
+            // 这样 Shift+Click 范围选取能反映到 VM 的选中状态
+            foreach (var item in vm.LargeFiles)
+                item.IsSelected = LargeFilesList.SelectedItems.Contains(item);
+
+            // 单项预览（取第一个选中的）
+            var firstSelected = LargeFilesList.SelectedItem as LargeFileInfo;
+            vm.OnLargeFileSelected(firstSelected);
         }
     }
 
