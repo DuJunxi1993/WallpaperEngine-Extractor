@@ -11,8 +11,7 @@
         MinHeight="900"
         WindowStartupLocation="CenterScreen"
         SizeToContent="Manual"
-        ExtendsContentIntoTitleBar="True"
-        WindowBackdropType="Mica">
+        ExtendsContentIntoTitleBar="True">
 
     <Window.Resources>
         <converters:ThemeModeToSymbolConverter x:Key="ThemeModeToSymbolConverter"/>
@@ -27,7 +26,7 @@
         <ui:TitleBar Grid.Row="0"
                      Title=""
                      Padding="6,0,16,0"
-                     Background="Transparent"
+                     Background="{DynamicResource BackgroundBrush}"
                      ShowMaximize="True"
                      ShowMinimize="True"
                      CanMaximize="True">
@@ -74,6 +73,6 @@
         <Frame Grid.Row="1"
                x:Name="MainFrame"
                NavigationUIVisibility="Hidden"
-               Background="{DynamicResource PanelBackgroundBrush}"/>
+               Background="{DynamicResource BackgroundBrush}"/>
     </Grid>
 </ui:FluentWindow>

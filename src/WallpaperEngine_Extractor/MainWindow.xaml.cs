@@ -11,7 +11,7 @@ namespace WallpaperEngine_Extractor;
 /// <summary>
 /// 主窗口类
 /// 使用 WPF-UI 的 FluentWindow 实现 Windows 11 风格界面
-/// 窗口采用 Mica 背景效果 (WindowBackdropType="Mica") 与自定义标题栏 (ExtendsContentIntoTitleBar)
+/// 窗口采用自定义标题栏 (ExtendsContentIntoTitleBar) + 不透明面板
 /// </summary>
 public partial class MainWindow : Wpf.Ui.Controls.FluentWindow, INotifyPropertyChanged
 {
@@ -42,8 +42,9 @@ public partial class MainWindow : Wpf.Ui.Controls.FluentWindow, INotifyPropertyC
         CurrentThemeMode = settings.ThemeMode;
         App.ApplyTheme(CurrentThemeMode);
 
-        // 启用系统主题变化实时监听
-        SystemThemeWatcher.Watch(this as System.Windows.Window);
+        // 注意：故意不调用 SystemThemeWatcher.Watch()。
+        // 用户已经在标题栏手动 Light → Dark → System 循环了；如果再让系统主题变化
+        // 触发 WPF-UI 字典切换，会出现"内置字典换了 / 自定义字典没换"的颜色错配。
 
         Loaded += MainWindow_Loaded;
         DataContext = this;
@@ -80,6 +81,10 @@ public partial class MainWindow : Wpf.Ui.Controls.FluentWindow, INotifyPropertyC
     {
         if (MainFrame.Content is ExtractPage page && page.DataContext is ExtractViewModel vm)
         {
+            // vm.Settings 是启动时创建并从磁盘读出的实例，ThemeMode 还是旧值；
+            // 标题栏切换后的最新主题只存在 App.CurrentThemeMode 里，
+            // 关闭前必须同步，否则保存会把用户刚选的主题覆盖回启动值。
+            vm.Settings.ThemeMode = App.CurrentThemeMode;
             vm.Settings.SaveSettings();
         }
         base.OnClosing(e);

@@ -20,10 +20,10 @@ WallpaperEngine Extractor 是一款基于 Windows 11 UI 风格（WinUI 3/WPF）�
 ### 用户界面
 
 - **Windows 11 风格**：采用 WinUI 3/Fluent Design 设计语言
-- **Mica 背景效果**：使用 Windows 11 原生 Mica 模糊背景效果
-- **深色/浅色主题**：自动跟随系统主题设置
+- **不透明面板**：纯色卡片分层（浅色 `#F3F3F3` 背景 + `#FFFFFF` 卡片；深色 `#202020` 背景 + `#2D2D2D` 卡片），不使用 Mica/Acrylic
+- **深色/浅色/跟随系统**：标题栏按钮循环切换三种主题模式，选择会保存到设置
 - **实时预览**：大图片整理功能支持缩略图预览
-- **操作日志**：实时显示提取进度和日志信息
+- **操作日志**：实时显示提取进度和日志信息，自动滚动到最新一行
 
 ### 文件整理
 
@@ -173,9 +173,10 @@ WallpaperEngine_Extractor/
 
 程序使用 WPF-UI 库的 Fluent Design System：
 
-- **Mica 背景**：Windows 11 原生模糊背景效果
-- **自动主题**：跟随系统设置自动切换深色/浅色模式
-- **动态资源**：使用 DynamicResource 实时响应主题变更
+- **不透明分层**：窗口用纯色背景 + 卡片用表面色，浅色/深色各一套 token
+- **三种主题模式**：标题栏按钮循环 `Light → Dark → System`；`System` 只在启动时向系统取一次值，之后不再自动跟随
+- **动态资源**：所有配色通过 `DynamicResource` 走 `Themes/Dark.xaml` / `Themes/Light.xaml`，切换时整体换字典
+- **次级灰阶**：标题/正文用 `TextFillColorPrimaryBrush`，描述/占位用 `TextFillColorSecondaryBrush`（浅色 `#666666`、深色 `#808080`）
 
 ## 设置说明
 

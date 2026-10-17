@@ -6,9 +6,14 @@
     <Application.Resources>
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
-                <ui:ThemesDictionary Theme="Dark" />
+                <!--
+                    ThemesDictionary 必须保留——WPF-UI 的 TextFillColorPrimaryBrush / AccentFillColorDefaultBrush
+                    等前景色都来自它，删掉后深色主题下文字保持浅色默认值（黑底黑字 = 看不见）。
+                    这里用无参构造，让 WPF-UI 默认跟随系统；OnStartup 再按用户设置强制覆盖到 Light/Dark。
+                    不用 Theme="Dark" 硬编码避免首次启动 SwapThemeDictionary 时被旧状态污染。
+                -->
+                <ui:ThemesDictionary />
                 <ui:ControlsDictionary />
-                <ResourceDictionary Source="pack://application:,,,/Themes/Dark.xaml" />
             </ResourceDictionary.MergedDictionaries>
 
             <!-- 默认字体：Windows 11 推荐 Segoe UI Variable，缺失时回退 Segoe UI -->

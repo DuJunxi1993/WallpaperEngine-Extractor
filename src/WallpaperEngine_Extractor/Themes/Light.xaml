@@ -19,16 +19,20 @@
     <Color x:Key="SurfaceElevatedColor">#FFFFFF</Color>
     <SolidColorBrush x:Key="SurfaceElevatedBrush" Color="{StaticResource SurfaceElevatedColor}"/>
 
-    <!-- 面板背景：浅色模式用 #FEFEFE -->
-    <Color x:Key="PanelBackgroundColor">#FEFEFE</Color>
+    <!-- 面板背景：浅色模式用纯白 #FFFFFF，比 #F3F3F3 背景亮一档，卡片"浮"在页面上 -->
+    <Color x:Key="PanelBackgroundColor">#FFFFFF</Color>
     <SolidColorBrush x:Key="PanelBackgroundBrush" Color="{StaticResource PanelBackgroundColor}"/>
 
     <!-- Text -->
+    <!--
+        显式覆盖 WPF-UI 的 TextFillColorSecondaryBrush。浅色主题 WPF-UI 默认 #666666，
+        这里保持一致；两个主题都给 CaptionTextStyle 提供可见的次级灰阶入口。
+    -->
     <Color x:Key="TextPrimaryColor">#1A1A1A</Color>
     <SolidColorBrush x:Key="TextPrimaryBrush" Color="{StaticResource TextPrimaryColor}"/>
 
-    <Color x:Key="TextSecondaryColor">#666666</Color>
-    <SolidColorBrush x:Key="TextSecondaryBrush" Color="{StaticResource TextSecondaryColor}"/>
+    <Color x:Key="TextFillColorSecondaryColor">#666666</Color>
+    <SolidColorBrush x:Key="TextFillColorSecondaryBrush" Color="{StaticResource TextFillColorSecondaryColor}"/>
 
     <Color x:Key="TextTertiaryColor">#919191</Color>
     <SolidColorBrush x:Key="TextTertiaryBrush" Color="{StaticResource TextTertiaryColor}"/>
@@ -107,6 +111,7 @@
 
     <Style x:Key="CaptionTextStyle" TargetType="TextBlock">
         <Setter Property="FontSize" Value="{DynamicResource FontSize.Caption}"/>
+        <!-- 描述/占位/状态说明：走次级灰阶 #666666（见本文件 TextFillColorSecondaryColor） -->
         <Setter Property="Foreground" Value="{DynamicResource TextFillColorSecondaryBrush}"/>
     </Style>
 

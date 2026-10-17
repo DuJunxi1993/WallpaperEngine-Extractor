@@ -13,6 +13,13 @@ public enum AppThemeMode
 /// <summary>
 /// 应用程序入口类
 /// 负责初始化应用程序和系统主题设置
+///
+/// 设计要点：
+/// - 不在 App.xaml 硬编码 WPF-UI ThemesDictionary 或自定义字典 (避免首次启动颜色错)
+/// - 不订阅 SystemThemeWatcher / ApplicationThemeManager.Changed (避免系统主题变化
+///   把用户主动设的 Light/Dark 模式偷偷切换回去)
+/// - 用户模式明确按 Light/Dark/System 处理；System 模式只在启动时根据 OS 检测一次，
+///   之后跟随用户在标题栏按钮上做的选择
 /// </summary>
 public partial class App : Application
 {
@@ -21,8 +28,6 @@ public partial class App : Application
     /// </summary>
     public static AppThemeMode CurrentThemeMode { get; set; } = AppThemeMode.System;
 
-    private static bool _changedEventHooked;
-
     protected override void OnStartup(StartupEventArgs e)
     {
         ApplyTheme(CurrentThemeMode);
@@ -30,7 +35,9 @@ public partial class App : Application
     }
 
     /// <summary>
-    /// 根据主题模式切换应用主题与资源字典
+    /// 根据主题模式切换应用主题与资源字典。
+    /// 自定义字典的加载目标直接由本参数决定，不再读 GetAppTheme()，
+    /// 避免硬编码 / 缓存状态导致首启动误判。
     /// </summary>
     public static void ApplyTheme(AppThemeMode mode)
     {
@@ -42,40 +49,26 @@ public partial class App : Application
         else
             ApplicationThemeManager.Apply(mode == AppThemeMode.Dark ? ApplicationTheme.Dark : ApplicationTheme.Light);
 
-        // 切换自定义主题字典（Dark.xaml / Light.xaml）
-        SwapThemeDictionary();
-
-        // 订阅 Changed 事件，确保 WPF-UI 主题变更时（系统主题切换）同步自定义字典
-        if (!_changedEventHooked)
-        {
-            ApplicationThemeManager.Changed += OnApplicationThemeChanged;
-            _changedEventHooked = true;
-        }
+        // 切换自定义主题字典（Dark.xaml / Light.xaml），目标由调用方显式给出
+        SwapThemeDictionary(mode);
     }
 
-    /// <summary>
-    /// WPF-UI 主题变更回调：WPF-UI 已自动切换内置字典，这里只需同步自定义字典
-    /// （仅在 System 模式下响应；Light/Dark 是用户主动设置，不应被系统事件覆盖）
-    /// </summary>
-    private static void OnApplicationThemeChanged(ApplicationTheme theme, System.Windows.Media.Color accent)
-    {
-        if (CurrentThemeMode == AppThemeMode.System)
-        {
-            SwapThemeDictionary();
-        }
-    }
-
-    private static void SwapThemeDictionary()
+    private static void SwapThemeDictionary(AppThemeMode mode)
     {
         var resources = Current.Resources;
         var merged = resources.MergedDictionaries;
         const string darkPath = "pack://application:,,,/Themes/Dark.xaml";
         const string lightPath = "pack://application:,,,/Themes/Light.xaml";
 
-        // 用 WPF-UI 检测到的实际系统主题（避免用静态字段的过期值）
-        var detected = ApplicationThemeManager.GetAppTheme();
-        var targetPath = detected == ApplicationTheme.Dark ? darkPath : lightPath;
-        System.Diagnostics.Debug.WriteLine($"[Theme] SwapThemeDictionary: detected={detected}, target={targetPath}");
+        // System 模式按 WPF-UI 检测到的实际系统主题选择
+        // Light/Dark 模式直接按用户选择加载
+        var effective = mode == AppThemeMode.System
+            ? (ApplicationThemeManager.GetAppTheme() == ApplicationTheme.Dark
+                ? AppThemeMode.Dark
+                : AppThemeMode.Light)
+            : mode;
+        var targetPath = effective == AppThemeMode.Dark ? darkPath : lightPath;
+        System.Diagnostics.Debug.WriteLine($"[Theme] SwapThemeDictionary: mode={mode}, effective={effective}, target={targetPath}");
 
         // 移除已有的自定义主题字典
         ResourceDictionary? toRemove = null;
