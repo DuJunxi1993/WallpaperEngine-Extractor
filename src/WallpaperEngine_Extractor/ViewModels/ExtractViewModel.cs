@@ -4,11 +4,13 @@ using RePKG.Application.Package;
 using RePKG.Application.Texture;
 using RePKG.Core.Texture;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Media.Imaging;
@@ -132,6 +134,24 @@ public partial class ExtractViewModel : ObservableObject
             dispatcher.BeginInvoke(AddOnUi);
         else
             AddOnUi();
+    }
+
+    /// <summary>
+    /// 并行提取时更新进度：任何线程调用都会 marshal 回 UI 线程再写 Progress/StatusText。
+    /// </summary>
+    private void ReportProgress(int done, int total)
+    {
+        void Apply()
+        {
+            Progress = total <= 0 ? 0 : (int)((double)done / total * 100);
+            StatusText = $"正在提取... {done}/{total}";
+        }
+
+        var dispatcher = System.Windows.Application.Current?.Dispatcher;
+        if (dispatcher != null && !dispatcher.CheckAccess())
+            dispatcher.BeginInvoke(Apply);
+        else
+            Apply();
     }
 
     // ==================== 事件处理 ====================
@@ -301,42 +321,82 @@ public partial class ExtractViewModel : ObservableObject
 
             Log(LogLevel.Info, $"发现 {totalFiles} 个 PKG 文件待处理");
 
-            // 逐个处理PKG文件
-            var extractedDirs = new List<string>();
-            foreach (var pkgFile in filesToProcess)
+            // 并行处理 PKG 文件：并发度取 min(CPU 核数, 4)，
+            // 兼顾 TEX→PNG 的 CPU 密集与多文件同时写盘的 I/O 压力。
+            var maxParallel = Math.Min(Environment.ProcessorCount, 4);
+            var extractedDirs = new ConcurrentBag<string>();
+
+            // 同名 PKG（来自不同来源目录）会算出同一个输出子目录，并行写同一批文件会冲突；
+            // 用本次运行内的名字登记表分配唯一目录名（第二次出现追加 " (2)"、"(3)" …）。
+            var usedOutputNames = new ConcurrentDictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+            string AllocateOutputDir(string pkgFile)
             {
-                token.ThrowIfCancellationRequested();
-
-                try
+                var baseName = Path.GetFileNameWithoutExtension(pkgFile);
+                var candidate = baseName;
+                var suffix = 1;
+                while (!usedOutputNames.TryAdd(candidate, 0))
                 {
-                    // 创建输出子文件夹
-                    var outputDir = Path.Combine(OutputDirectory, Path.GetFileNameWithoutExtension(pkgFile));
-                    Directory.CreateDirectory(outputDir);
-
-                    extractedDirs.Add(outputDir);
-
-                    Log(LogLevel.Info, $"→ {Path.GetFileName(pkgFile)}  →  {Path.GetFileName(outputDir)}");
-
-                    // 执行提取
-                    await Task.Run(() => ExtractPkg(pkgFile, outputDir), token);
-
-                    processedFiles++;
-                    Progress = (int)((double)processedFiles / totalFiles * 100);
-                    StatusText = $"正在提取... {processedFiles}/{totalFiles}";
+                    suffix++;
+                    candidate = $"{baseName} ({suffix})";
                 }
-                catch (OperationCanceledException)
-                {
-                    Log(LogLevel.Warning, "提取被取消");
-                    return;
-                }
-                catch (Exception ex)
-                {
-                    Log(LogLevel.Error, $"处理失败：{Path.GetFileName(pkgFile)} — {ex.Message}");
-                }
+                return Path.Combine(OutputDirectory, candidate);
+            }
+
+            Log(LogLevel.Info, $"并行提取（并发度 {maxParallel}）");
+
+            try
+            {
+                await Parallel.ForEachAsync(
+                    filesToProcess,
+                    new ParallelOptions
+                    {
+                        MaxDegreeOfParallelism = maxParallel,
+                        CancellationToken = token
+                    },
+                    (pkgFile, _) =>
+                    {
+                        var outputDir = AllocateOutputDir(pkgFile);
+
+                        try
+                        {
+                            Directory.CreateDirectory(outputDir);
+                            extractedDirs.Add(outputDir);
+
+                            Log(LogLevel.Info, $"→ {Path.GetFileName(pkgFile)}  →  {Path.GetFileName(outputDir)}");
+
+                            // ExtractPkg 是同步的 CPU/IO 密集方法，直接在当前工作线程执行
+                            ExtractPkg(pkgFile, outputDir);
+                        }
+                        catch (OperationCanceledException)
+                        {
+                            throw;
+                        }
+                        catch (Exception ex)
+                        {
+                            Log(LogLevel.Error, $"处理失败：{Path.GetFileName(pkgFile)} — {ex.Message}");
+                        }
+
+                        var done = Interlocked.Increment(ref processedFiles);
+                        ReportProgress(done, totalFiles);
+
+                        return ValueTask.CompletedTask;
+                    });
+            }
+            catch (OperationCanceledException)
+            {
+                Log(LogLevel.Warning, "提取被取消");
+                return;
             }
 
             token.ThrowIfCancellationRequested();
 
+            // 并行循环里的 ReportProgress 是通过 BeginInvoke 排队的，
+            // 可能晚于这里的收尾赋值执行，导致 StatusText 又变回"正在提取... N/N"。
+            // 以 Background 优先级插一个空回调，等所有 Normal 优先级的排队项先跑完。
+            System.Windows.Application.Current?.Dispatcher.Invoke(
+                () => { }, System.Windows.Threading.DispatcherPriority.Background);
+
+            Progress = 100;
             StatusText = "提取完成";
             Log(LogLevel.Success, $"提取完成：{processedFiles}/{totalFiles} 个 PKG");
 
