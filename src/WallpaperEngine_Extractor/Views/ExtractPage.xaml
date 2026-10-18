@@ -83,8 +83,10 @@
 
     <!--
         布局：
-        1. 输入卡片（Auto）
-        2. 主区（*）：输出图片 (2y) + 提取日志 (1y) 在左列（1x），预览 (3y) 在右列（2x）跨两行
+        1. 输入卡片（Auto）：3 张 1:1:1，列定义 `* | gap | * | gap | *`
+        2. 主区（*）：与第一行共用同一套 5 列。输出图片 (2y) + 提取日志 (1y) 占第 1 列，
+           预览跨第 3~5 列、跨两行。这样左卡宽度与第一行完全相同（边界严格对齐），
+           预览实际为 2a + gap，比例约 1:2.03。
         3. 进度条 + 开始提取（Auto, 贴底）
     -->
     <Grid Margin="{DynamicResource PageMargin}">
@@ -283,10 +285,14 @@
                 <RowDefinition Height="1*"/>
             </Grid.RowDefinitions>
             <Grid.ColumnDefinitions>
-                <!-- 左列 1x，右列 2x -->
+                <!-- 与第一行共用同一套 5 列：左卡 = a，预览 = a + gap + a。
+                     若沿用 `* / gap / 2*`，左卡会变成 (W-gap)/3，与第一行 (W-2*gap)/3
+                     差 gap/3（约 4px），左右边界都对不齐。 -->
                 <ColumnDefinition Width="*" MinWidth="240"/>
                 <ColumnDefinition Width="{DynamicResource ColumnSpacing.M}"/>
-                <ColumnDefinition Width="2*" MinWidth="320"/>
+                <ColumnDefinition Width="*" MinWidth="160"/>
+                <ColumnDefinition Width="{DynamicResource ColumnSpacing.M}"/>
+                <ColumnDefinition Width="*" MinWidth="160"/>
             </Grid.ColumnDefinitions>
 
             <!-- 输出图片 (Col 0, Row 0)：2y 高 -->
@@ -491,8 +497,8 @@
                 </Grid>
             </Border>
 
-            <!-- 预览 (Col 2, RowSpan=2)：跨两行，3y 高 = 2y + 1y -->
-            <Border Grid.Row="0" Grid.Column="2" Grid.RowSpan="2"
+            <!-- 预览：跨第 3~5 列（= 2a + gap）、跨两行，宽高都比左侧卡片大 -->
+            <Border Grid.Row="0" Grid.Column="2" Grid.ColumnSpan="3" Grid.RowSpan="2"
                     Style="{StaticResource CardBorderStyle}">
                 <Grid>
                     <Grid.RowDefinitions>
