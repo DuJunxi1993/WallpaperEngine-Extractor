@@ -1,3 +1,0 @@
-release: v0.2.0
-
-- 版本号 0.1.2 -> 0.2.0（csproj 与 installer.iss 同步），配合 GitHub Release 附带安装包。
