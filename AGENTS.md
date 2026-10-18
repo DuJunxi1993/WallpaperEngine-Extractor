@@ -50,6 +50,14 @@ then downloads `windowsdesktop-runtime-10.0.13-win-x64.exe` (SHA-256 verified) a
 Compile-time defines for testing: `ForceMissingDotNet`, `MyDotNetRuntimeUrl`,
 `MyPrivilegesRequired`, `MyOutputBaseFilename`.
 
+**Setup must run elevated.** Inno 6.3+ compiles the setup stub with an `asInvoker` manifest even
+when `PrivilegesRequired=admin` (it extracts to `%TEMP%` first and asks for elevation later), which
+surfaces as "Access is denied" on locked-down machines. `installer/patch-manifest.ps1` therefore
+rewrites the manifest to `requireAdministrator` after ISCC runs, using an equal-length in-place byte
+patch — `mt.exe` must not be used because it drops Inno's payload overlay (4.78 MB → 0.92 MB).
+`build-installer.ps1` runs this automatically and fails the build if the result is not
+`requireAdministrator`.
+
 ## Key dependencies
 
 | Package | Version |

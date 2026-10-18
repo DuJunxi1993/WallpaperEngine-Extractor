@@ -82,7 +82,7 @@ Filename: "{app}\{#MyAppExeName}"; Description: "{cm:LaunchProgram,{#StringChang
 
 [Messages]
 english.SetupAppTitle={#MyAppName} 安装程序
-english.SetupWindowTitle={#MyAppName} 安装程序 - [name]
+english.SetupWindowTitle={#MyAppName} 安装程序
 english.WelcomeLabel1=欢迎安装 [name]
 english.WelcomeLabel2={#MyAppName} 安装向导将引导您完成安装。%n%n本程序需要 .NET {#MinDotNetVersion} Desktop Runtime 或更高版本，安装前会自动检测；若缺失会询问您是否立即安装。
 english.WizardSelectDir=选择安装位置
@@ -369,5 +369,6 @@ begin
 
   Log('.NET Desktop Runtime installed: ' + DetectedDotNetVersion());
 end;
+
 
 
