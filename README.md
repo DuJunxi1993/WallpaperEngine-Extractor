@@ -36,20 +36,26 @@ WallpaperEngine Extractor 是一款基于 Windows 11 UI 风格（WinUI 3/WPF）�
 
 ### 运行环境
 
-- **操作系统**：Windows 10 (1809+) / Windows 11
-- **.NET 运行时**：.NET 10.0 Runtime（或使用自包含版本无需安装）
+- **操作系统**：Windows 10 (1809+) / Windows 11（64 位）
+- **.NET 运行时**：[.NET 10 Desktop Runtime](https://dotnet.microsoft.com/download/dotnet/10.0) 10.0.0 或更高版本
+
+> 安装包只捆绑「共享运行时」版本（≈9.4 MB）。安装程序会在开始前检测 .NET 10 Desktop Runtime：
+> 已装（≥ 10.0.0，不限补丁号）则直接继续；缺失会弹窗询问，确认后自动下载并安装运行时，
+> 装好并重新检测通过才继续安装。也可选择下载自包含版本，无需安装任何运行时。
 
 ### 开发环境
 
 - **.NET SDK**：.NET 10.0 SDK
 - **IDE**：Visual Studio 2022/2024（推荐）
 - **工作负载**：.NET 桌面开发
+- **打包**：[Inno Setup 6](https://jrsoftware.org/isinfo.php)（仅构建安装包时需要）
 
 ## 安装与构建
 
-### 方式一：直接运行（推荐）
+### 方式一：运行安装包（推荐）
 
-下载 release 版本压缩包并解压，直接运行 `WallpaperEngine_Extractor.exe`。
+下载 `WallpaperEngine_Extractor_Setup.exe` 运行即可。安装向导会自动检测并（在您确认后）安装
+所需的 .NET 10 Desktop Runtime。
 
 ### 方式二：从源码构建
 
@@ -82,11 +88,17 @@ dotnet build -c Release WallpaperEngine_Extractor.sln
 dotnet run --project src/WallpaperEngine_Extractor/WallpaperEngine_Extractor.csproj
 ```
 
-### 方式三：发布为自包含 EXE
+### 方式三：发布可分发包
 
 ```powershell
-# 单文件发布（包含 .NET 运行时）
+# 1. 自包含单文件（≈135 MB，用户无需安装 .NET）
 dotnet publish -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true
+
+# 2. 共享运行时单文件（≈9.4 MB，需要 .NET 10 Desktop Runtime）
+dotnet publish -c Release -r win-x64 -p:PublishSingleFile=true -p:SelfContained=false
+
+# 3. 一键构建共享运行时安装包（输出 installer/Output/*.exe，≈4.8 MB）
+pwsh -File installer/build-installer.ps1
 ```
 
 ## 项目结构
@@ -102,10 +114,10 @@ WallpaperEngine_Extractor/
 │       ├── App.xaml(.cs)             # 应用程序入口
 │       ├── MainWindow.xaml(.cs)      # 主窗口
 │       ├── WallpaperEngine_Extractor.csproj  # 项目文件
+│       ├── app.ico                   # 程序图标（多尺寸）
 │       │
 │       ├── Views/                    # 页面视图
-│       │   ├── ExtractPage.xaml(.cs) # 提取页面
-│       │   └── AboutPage.xaml(.cs)   # 关于页面
+│       │   └── ExtractPage.xaml(.cs) # 提取页面
 │       │
 │       ├── ViewModels/               # 视图模型 (MVVM)
 │       │   ├── ExtractViewModel.cs   # 提取功能视图模型
@@ -117,6 +129,10 @@ WallpaperEngine_Extractor/
 │       └── Themes/                   # 主题资源
 │           ├── Dark.xaml
 │           └── Light.xaml
+│
+├── installer/                        # 安装包（Inno Setup 6）
+│   ├── installer.iss                 # 安装脚本（含 .NET 运行时检测）
+│   └── build-installer.ps1           # 一键构建
 │
 └── libs/
     └── repkg/                        # RePKG 库（PKG/TEX 解析）

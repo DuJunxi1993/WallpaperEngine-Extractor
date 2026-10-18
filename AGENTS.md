@@ -30,7 +30,25 @@ dotnet run --project src/WallpaperEngine_Extractor
 | `dotnet build WallpaperEngine_Extractor.sln` | Debug build (x64) |
 | `dotnet build -c Release WallpaperEngine_Extractor.sln` | Release build (x64) |
 | `dotnet run --project src/WallpaperEngine_Extractor/WallpaperEngine_Extractor.csproj` | Run the app |
-| `dotnet publish -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true` | Self-contained single EXE |
+| `dotnet publish -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true` | Self-contained single EXE (~135 MB, no .NET needed) |
+| `pwsh -File installer/build-installer.ps1` | Build the shared-runtime installer (`installer/Output/*.exe`, ~4.8 MB) |
+
+## Distribution
+
+Two flavors are supported; the installer ships the second one.
+
+| Flavor | Command | Size | User requirement |
+|---|---|---|---|
+| Self-contained | `-r win-x64 --self-contained true -p:PublishSingleFile=true` | ~135 MB EXE | none |
+| Shared runtime | `-r win-x64 -p:SelfContained=false -p:PublishSingleFile=true` | ~9.4 MB EXE | .NET 10 Desktop Runtime |
+
+`installer/installer.iss` (Inno Setup 6) bundles only the shared-runtime EXE. On startup it scans
+`{commonpf64}\dotnet\shared\Microsoft.WindowsDesktop.App` (plus `DOTNET_ROOT`) for a version
+`>= 10.0.0` — major/minor only, patch level is **not** restricted. If missing it asks the user,
+then downloads `windowsdesktop-runtime-10.0.13-win-x64.exe` (SHA-256 verified) and runs it with
+`/install /quiet /norestart`; installation is aborted unless the runtime is detected afterwards.
+Compile-time defines for testing: `ForceMissingDotNet`, `MyDotNetRuntimeUrl`,
+`MyPrivilegesRequired`, `MyOutputBaseFilename`.
 
 ## Key dependencies
 

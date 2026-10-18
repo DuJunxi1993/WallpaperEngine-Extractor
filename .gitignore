@@ -49,6 +49,10 @@ packages/
 dist/
 publish/
 
+# Inno Setup compiler output
+installer/Output/
+*.iss.bak
+
 # Sandbox / permission diagnostics (DSH)
 .acl-reports/
 .session/
