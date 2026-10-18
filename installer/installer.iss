@@ -12,7 +12,7 @@
 ; ============================================================================
 
 #define MyAppName "Wallpaper Engine Extractor"
-#define MyAppVersion "0.1.2"
+#define MyAppVersion "0.2.0"
 #define MyAppPublisher "dujunxi1993"
 #define MyAppURL "https://github.com/DuJunxi1993/WallpaperEngine-Extractor"
 #define MyAppExeName "WallpaperEngine_Extractor.exe"
@@ -369,4 +369,5 @@ begin
 
   Log('.NET Desktop Runtime installed: ' + DetectedDotNetVersion());
 end;
+
 
